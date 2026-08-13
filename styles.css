@@ -1189,4 +1189,66 @@ td {
    ───────────────────────────────────────────── */
 .toast.success { border-color: rgba(16,185,129,0.4); background: rgba(16,185,129,0.12); color: #10b981; }
 
+/* ─────────────────────────────────────────────
+   RESPONSIVIDADE EXTRA (Celular e Tablet)
+   ───────────────────────────────────────────── */
+@media (max-width: 992px) {
+  .home-stats-grid { grid-template-columns: repeat(3, 1fr); }
+  .home-rankings-grid { grid-template-columns: 1fr; }
+  .comp-search-grid { grid-template-columns: 1fr; gap: 16px; }
+  .comp-vs { padding-top: 10px; padding-bottom: 10px; }
+  .pen-grid { grid-template-columns: repeat(2, 1fr); }
+}
 
+@media (max-width: 768px) {
+  .mode-switcher {
+    flex-wrap: wrap;
+    border-radius: var(--radius-md);
+    padding: 8px;
+  }
+  .mode-btn {
+    flex: 1 1 calc(33.333% - 8px);
+    justify-content: center;
+    padding: 8px 12px;
+    font-size: 0.85rem;
+    border-radius: var(--radius-sm);
+  }
+  
+  .cand-hero { padding: 20px; }
+  .cand-hero-top { flex-direction: column; align-items: center; text-align: center; }
+  .cand-tags { justify-content: center; }
+  .stats-row { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  
+  .table-header { flex-direction: column; align-items: stretch; gap: 12px; }
+  .table-search { max-width: 100%; }
+  .tabs-nav { width: 100%; white-space: nowrap; overflow-x: auto; padding-bottom: 4px; }
+  
+  .home-stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .hero h2 { font-size: 2.2rem; }
+  .hero-eyebrow { font-size: 0.7rem; }
+}
+
+@media (max-width: 480px) {
+  .mode-btn { flex: 1 1 calc(50% - 8px); }
+  
+  .header-inner { flex-direction: column; gap: 10px; }
+  .header-badge { width: 100%; justify-content: center; }
+  
+  .home-stats-grid { grid-template-columns: 1fr; }
+  .stats-row { grid-template-columns: 1fr; }
+  
+  .pen-grid { grid-template-columns: 1fr; }
+  
+  .cand-avatar-lg { width: 60px; height: 60px; font-size: 1.5rem; }
+  .cand-info h2 { font-size: 1.3rem; }
+  
+  /* Forçar scroll nas tabelas e reduzir fonte */
+  td, th { padding: 10px 12px; font-size: 0.8rem; }
+  .table-title { font-size: 0.9rem; }
+  .mini-avatar { width: 28px; height: 28px; font-size: 0.65rem; }
+  
+  .search-box { padding: 4px 4px 4px 14px; }
+  #searchInput, #muniSearchInput { font-size: 0.9rem; }
+  
+  .comp-totais-grid { grid-template-columns: 1fr; }
+}
