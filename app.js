@@ -4,7 +4,7 @@
    URL Share · Histórico · Comparativo de Turnos
    ═══════════════════════════════════════════════════════════ */
 
-const API = 'http://127.0.0.1:8000';
+const API = ''; // Deixando vazio para funcionar tanto local quanto no Render
 
 // ── Estado Global ──────────────────────────────────────────
 const state = {
