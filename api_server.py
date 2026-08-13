@@ -16,6 +16,19 @@ DB_PATH = os.path.join(BASE_DIR, "mapaeleitoral.db")
 
 app = FastAPI(title="Mapa Eleitoral MG 2022", version="1.0.0")
 
+@app.on_event("startup")
+def startup_event():
+    if not os.path.exists(DB_PATH):
+        print("Banco de dados não encontrado. Iniciando download automático do Google Drive...")
+        import gdown
+        file_id = "1bWdMER2pcZxrm6C-XnM2GLJHbrug0J7B"
+        url = f"https://drive.google.com/uc?id={file_id}"
+        try:
+            gdown.download(url, DB_PATH, quiet=False)
+            print("✅ Download do banco de dados concluído com sucesso!")
+        except Exception as e:
+            print(f"❌ Erro ao baixar banco de dados: {e}")
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
