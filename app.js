@@ -196,18 +196,25 @@ function resetPanels() {
 // HOME DASHBOARD
 // ─────────────────────────────────────────────
 async function carregarHome() {
-  showLoading('Carregando dashboard...');
+  showLoading('Carregando estatísticas globais...');
   try {
-    const [stats, rankEst, rankFed] = await Promise.all([
-      fetch(`${API}/api/estatisticas-gerais`).then(r => r.json()),
-      fetch(`${API}/api/ranking-geral?cargo=Deputado+Estadual&turno=${state.hometurno}&limite=20`).then(r => r.json()),
-      fetch(`${API}/api/ranking-geral?cargo=Deputado+Federal&turno=${state.hometurno}&limite=20`).then(r => r.json()),
-    ]);
+    // 1. Carrega Estatísticas (Otimização de nuvem: Feito de forma sequencial para não estourar RAM do Render)
+    const stats = await fetch(`${API}/api/estatisticas-gerais`).then(r => r.json());
     renderHomeStats(stats);
+    
+    // 2. Carrega Ranking Estadual
+    showLoading('Carregando ranking estadual...');
+    const rankEst = await fetch(`${API}/api/ranking-geral?cargo=Deputado+Estadual&turno=${state.hometurno}&limite=20`).then(r => r.json());
     renderHomeRanking('rankEstadualBody', rankEst);
+
+    // 3. Carrega Ranking Federal
+    showLoading('Carregando ranking federal...');
+    const rankFed = await fetch(`${API}/api/ranking-geral?cargo=Deputado+Federal&turno=${state.hometurno}&limite=20`).then(r => r.json());
     renderHomeRanking('rankFederalBody', rankFed);
+
   } catch(e) {
     console.error(e);
+    showToast('Erro ao carregar o painel inicial.', 'error');
   } finally {
     hideLoading();
   }

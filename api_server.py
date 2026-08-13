@@ -43,7 +43,9 @@ app.add_middleware(
 def get_conn():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA cache_size=50000")
+    # Otimização de nuvem: Reduzido de 50000 páginas (200MB) para -20000 (20MB fixos)
+    # Isso impede que 3 conexões simultâneas esgotem os 512MB do Render Free Tier
+    conn.execute("PRAGMA cache_size=-20000")
     conn.execute("PRAGMA temp_store=MEMORY")
     return conn
 
@@ -372,133 +374,6 @@ def info_municipio(municipio: str):
         conn.close()
 
 # ─────────────────────────────────────────────
-# Novas Rotas (Ranking Geral, Partidos, Penetração, Comparativo, etc)
-# ─────────────────────────────────────────────
-
-@app.get("/api/ranking-geral")
-def ranking_geral(cargo: str = Query("Deputado Estadual"), turno: int = 1, limite: int = 20):
-    conn = get_conn()
-    try:
-        rows = conn.execute("""
-            SELECT SQ_CANDIDATO, NM_CANDIDATO, NM_URNA_CANDIDATO, NR_CANDIDATO, DS_CARGO, SG_PARTIDO,
-                   SUM(QT_VOTOS_NOMINAIS) as total_votos, COUNT(DISTINCT NM_MUNICIPIO) as total_municipios
-            FROM votos_zona
-            WHERE DS_CARGO=? AND NR_TURNO=? AND QT_VOTOS_NOMINAIS > 0
-            GROUP BY SQ_CANDIDATO
-            ORDER BY total_votos DESC
-            LIMIT ?
-        """, [cargo, turno, limite]).fetchall()
-        return [row_to_dict(r) for r in rows]
-    finally:
-        conn.close()
-
-@app.get("/api/partidos")
-def partidos():
-    conn = get_conn()
-    try:
-        rows = conn.execute("""
-            SELECT DISTINCT SG_PARTIDO, NM_PARTIDO
-            FROM candidatos
-            WHERE SG_PARTIDO IS NOT NULL
-            ORDER BY SG_PARTIDO
-        """).fetchall()
-        return [row_to_dict(r) for r in rows]
-    finally:
-        conn.close()
-
-@app.get("/api/partido/{partido}/candidatos")
-def partido_candidatos(partido: str, turno: int = 1):
-    conn = get_conn()
-    try:
-        rows = conn.execute("""
-            SELECT c.SQ_CANDIDATO, c.NM_CANDIDATO, c.NM_URNA_CANDIDATO, c.NR_CANDIDATO,
-                   c.DS_CARGO, c.SG_PARTIDO, COALESCE(SUM(v.QT_VOTOS_NOMINAIS),0) as total_votos
-            FROM candidatos c
-            LEFT JOIN votos_zona v ON c.SQ_CANDIDATO=v.SQ_CANDIDATO AND v.NR_TURNO=?
-            WHERE c.SG_PARTIDO=?
-            GROUP BY c.SQ_CANDIDATO
-            ORDER BY total_votos DESC
-        """, [turno, partido]).fetchall()
-        return [row_to_dict(r) for r in rows]
-    finally:
-        conn.close()
-
-@app.get("/api/candidato/{sq_candidato}/penetracao")
-def candidato_penetracao(sq_candidato: int, turno: int = 1):
-    conn = get_conn()
-    try:
-        total_secoes = conn.execute("""
-            SELECT COUNT(*) as cnt FROM votos_secao
-            WHERE SQ_CANDIDATO=? AND NR_TURNO=? AND QT_VOTOS > 0
-        """, [sq_candidato, turno]).fetchone()["cnt"]
-
-        media_votos = conn.execute("""
-            SELECT AVG(QT_VOTOS) as val FROM votos_secao
-            WHERE SQ_CANDIDATO=? AND NR_TURNO=? AND QT_VOTOS > 0
-        """, [sq_candidato, turno]).fetchone()["val"] or 0.0
-
-        max_votos = conn.execute("""
-            SELECT MAX(QT_VOTOS) as val FROM votos_secao
-            WHERE SQ_CANDIDATO=? AND NR_TURNO=? AND QT_VOTOS > 0
-        """, [sq_candidato, turno]).fetchone()["val"] or 0
-
-        forte = conn.execute("""
-            SELECT NM_MUNICIPIO, SUM(QT_VOTOS_NOMINAIS) as val FROM votos_zona
-            WHERE SQ_CANDIDATO=? AND NR_TURNO=?
-            GROUP BY NM_MUNICIPIO
-            ORDER BY val DESC LIMIT 1
-        """, [sq_candidato, turno]).fetchone()
-
-        return {
-            "total_secoes_com_votos": total_secoes,
-            "media_votos_secao": round(media_votos, 2),
-            "max_votos_secao": max_votos,
-            "municipio_mais_forte": forte["NM_MUNICIPIO"] if forte else None,
-            "votos_municipio_mais_forte": forte["val"] if forte else 0
-        }
-    finally:
-        conn.close()
-
-@app.get("/api/candidato/{sq_candidato}/comparativo-turnos")
-def comparativo_turnos(sq_candidato: int):
-    conn = get_conn()
-    try:
-        rows = conn.execute("""
-            SELECT NM_MUNICIPIO, NR_TURNO, SUM(QT_VOTOS_NOMINAIS) as votos
-            FROM votos_zona
-            WHERE SQ_CANDIDATO=? AND NR_TURNO IN (1,2)
-            GROUP BY NM_MUNICIPIO, NR_TURNO
-            ORDER BY NM_MUNICIPIO
-        """, [sq_candidato]).fetchall()
-        return [row_to_dict(r) for r in rows]
-    finally:
-        conn.close()
-
-@app.get("/api/candidato/{sq_candidato}/comparar")
-def comparar_candidatos(sq_candidato: int, sq_outro: int = Query(...), turno: int = 1):
-    conn = get_conn()
-    try:
-        candidato_a = conn.execute("""
-            SELECT NM_MUNICIPIO, SUM(QT_VOTOS_NOMINAIS) as votos
-            FROM votos_zona
-            WHERE SQ_CANDIDATO=? AND NR_TURNO=?
-            GROUP BY NM_MUNICIPIO
-        """, [sq_candidato, turno]).fetchall()
-
-        candidato_b = conn.execute("""
-            SELECT NM_MUNICIPIO, SUM(QT_VOTOS_NOMINAIS) as votos
-            FROM votos_zona
-            WHERE SQ_CANDIDATO=? AND NR_TURNO=?
-            GROUP BY NM_MUNICIPIO
-        """, [sq_outro, turno]).fetchall()
-
-        return {
-            "candidato_a": [row_to_dict(r) for r in candidato_a],
-            "candidato_b": [row_to_dict(r) for r in candidato_b]
-        }
-    finally:
-        conn.close()
-
 @app.get("/api/abstencao")
 def abstencao(municipio: str = Query(...), turno: int = 1):
     conn = get_conn()
@@ -523,24 +398,6 @@ def abstencao(municipio: str = Query(...), turno: int = 1):
     finally:
         conn.close()
 
-@app.get("/api/estatisticas-gerais")
-def estatisticas_gerais():
-    conn = get_conn()
-    try:
-        total_estadual = conn.execute("SELECT COUNT(*) as cnt FROM candidatos WHERE DS_CARGO='Deputado Estadual'").fetchone()["cnt"]
-        total_federal = conn.execute("SELECT COUNT(*) as cnt FROM candidatos WHERE DS_CARGO='Deputado Federal'").fetchone()["cnt"]
-        total_municipios = conn.execute("SELECT COUNT(DISTINCT NM_MUNICIPIO) as cnt FROM votos_zona").fetchone()["cnt"]
-        
-        votos_estadual = conn.execute("SELECT SUM(QT_VOTOS_NOMINAIS) as val FROM votos_zona WHERE DS_CARGO='Deputado Estadual' AND NR_TURNO=1").fetchone()["val"] or 0
-        votos_federal = conn.execute("SELECT SUM(QT_VOTOS_NOMINAIS) as val FROM votos_zona WHERE DS_CARGO='Deputado Federal' AND NR_TURNO=1").fetchone()["val"] or 0
-
-        return {
-            "total_candidatos_estadual": total_estadual,
-            "total_candidatos_federal": total_federal,
-            "total_municipios": total_municipios,
-            "total_votos_estadual_t1": votos_estadual,
-            "total_votos_federal_t1": votos_federal
-        }
     finally:
         conn.close()
 
