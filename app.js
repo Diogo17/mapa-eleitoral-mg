@@ -263,7 +263,7 @@ function renderHomeRanking(tbodyId, data) {
       setModo('candidato');
       const sq = parseInt(tr.dataset.sq);
       const nm = tr.dataset.nm;
-      document.getElementById('searchInput').value = nm;
+      document.getElementById('searchInput').value = nm; document.getElementById('searchInput').blur();
       selecionarCandidato(sq, nm);
     });
   });
@@ -416,7 +416,7 @@ function renderCompAC(items, slot) {
   }).join('');
 
   list.querySelectorAll('.autocomplete-item').forEach(item => {
-    item.addEventListener('click', e => {
+    ['mousedown', 'touchstart', 'click'].forEach(evt => item.addEventListener(evt, e => {
       e.preventDefault();
       const sq = parseInt(item.dataset.sq);
       const nm = item.dataset.nm;
@@ -592,11 +592,11 @@ function renderCandidatoAC(items) {
   }).join('');
 
   list.querySelectorAll('.autocomplete-item').forEach(item => {
-    item.addEventListener('click', e => {
+    ['mousedown', 'touchstart', 'click'].forEach(evt => item.addEventListener(evt, e => {
       e.preventDefault();
       const sq = parseInt(item.dataset.sq);
       const nm = item.dataset.nm;
-      document.getElementById('searchInput').value = nm;
+      document.getElementById('searchInput').value = nm; document.getElementById('searchInput').blur();
       document.getElementById('searchClear').style.display = 'block';
       closeAC('autocompleteList');
       selecionarCandidato(sq, nm);
@@ -656,10 +656,10 @@ function renderMunicipioAC(items) {
   ).join('');
 
   list.querySelectorAll('.autocomplete-item').forEach(item => {
-    item.addEventListener('click', e => {
+    ['mousedown', 'touchstart', 'click'].forEach(evt => item.addEventListener(evt, e => {
       e.preventDefault();
       const nm = item.dataset.nm;
-      document.getElementById('muniSearchInput').value = nm;
+      document.getElementById('muniSearchInput').value = nm; document.getElementById('muniSearchInput').blur();
       document.getElementById('muniSearchClear').style.display = 'block';
       closeAC('muniAutocompleteList');
       selecionarMunicipio(nm);
