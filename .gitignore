@@ -1,0 +1,23 @@
+# Banco de Dados (muito grande para o GitHub)
+*.db
+*.sqlite
+*.sqlite3
+
+# Arquivos CSV brutos do TSE
+*.csv
+Boletim de Urna (BU) de 2022 do TSE de Minas Gerais/
+votacao_secao_2022_MG/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+.venv/
+env/
+venv/
+ENV/
+
+# OS
+.DS_Store
+Thumbs.db

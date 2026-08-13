@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Mapa Eleitoral MG 2022 — Dashboard Completo</title>
+  <meta name="description" content="Sistema completo de consulta do mapa eleitoral de Minas Gerais 2022."/>
+  <link rel="stylesheet" href="styles.css"/>
+</head>
+<body>
+
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <p class="loading-text" id="loadingText">Carregando...</p>
+</div>
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- HEADER -->
+<header>
+  <div class="container">
+    <div class="header-inner">
+      <a href="/" class="logo">
+        <div class="logo-icon">🗺️</div>
+        <div class="logo-text">
+          <h1>Mapa Eleitoral</h1>
+          <span>Minas Gerais · Eleições 2022</span>
+        </div>
+      </a>
+      <div class="header-badge"><span class="dot"></span><span id="dbStatus">Verificando...</span></div>
+    </div>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-eyebrow"><span>🗳️</span> Dados Oficiais TSE · 1º e 2º Turno · Minas Gerais</div>
+    <h2>Consulta o <span>Mapa Eleitoral</span><br>de MG 2022</h2>
+    <p>Dashboard completo com candidatos, municípios, partidos e comparações eleitorais.</p>
+
+    <!-- MODE SWITCHER (5 modos) -->
+    <div class="mode-switcher" id="modeSwitcher">
+      <button class="mode-btn" id="modeHome" onclick="setModo('home')"><span>🏠</span> Início</button>
+      <button class="mode-btn" id="modeCandidato" onclick="setModo('candidato')"><span>👤</span> Candidato</button>
+      <button class="mode-btn" id="modeMunicipio" onclick="setModo('municipio')"><span>🏙️</span> Município</button>
+      <button class="mode-btn" id="modePartido" onclick="setModo('partido')"><span>🎖️</span> Partido</button>
+      <button class="mode-btn" id="modeComparar" onclick="setModo('comparar')"><span>⚔️</span> Comparar</button>
+    </div>
+
+    <!-- CANDIDATO SEARCH -->
+    <div class="search-wrapper" id="candidatoSearchWrapper" style="display:none;">
+      <div class="search-filters" id="cargoFilters">
+        <button class="filter-btn active" data-cargo="todos">Todos</button>
+        <button class="filter-btn" data-cargo="Deputado Estadual">Dep. Estadual</button>
+        <button class="filter-btn" data-cargo="Deputado Federal">Dep. Federal</button>
+      </div>
+      <div class="search-box" id="searchBox">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="searchInput" placeholder="Digite o nome ou apelido do candidato..." autocomplete="off" spellcheck="false"/>
+        <button class="search-clear" id="searchClear">✕</button>
+      </div>
+      <div class="autocomplete-list" id="autocompleteList" style="display:none;"></div>
+      <div id="historicoContainer" style="display:none;flex-wrap:wrap;gap:6px;align-items:center;margin-top:10px;"></div>
+    </div>
+
+    <!-- MUNICÍPIO SEARCH -->
+    <div class="search-wrapper" id="municipioSearchWrapper" style="display:none;">
+      <div class="search-box" id="muniSearchBox">
+        <span class="search-icon">🏙️</span>
+        <input type="text" id="muniSearchInput" placeholder="Digite o nome do município de MG..." autocomplete="off" spellcheck="false"/>
+        <button class="search-clear" id="muniSearchClear">✕</button>
+      </div>
+      <div class="autocomplete-list" id="muniAutocompleteList" style="display:none;"></div>
+    </div>
+
+    <!-- PARTIDO SEARCH -->
+    <div class="search-wrapper" id="partidoSearchWrapper" style="display:none;">
+      <div class="search-box" style="padding:8px 16px;">
+        <span class="search-icon">🎖️</span>
+        <select id="partidoSelect" onchange="if(this.value) selecionarPartido(this.value)"
+          style="flex:1;background:none;border:none;color:var(--text-primary);font-size:1rem;font-family:var(--font-head);cursor:pointer;outline:none;">
+          <option value="">Selecione um partido...</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- COMPARAR SEARCH -->
+    <div class="search-wrapper" id="compararSearchWrapper" style="display:none;">
+      <div class="comp-search-grid">
+        <div class="comp-search-slot">
+          <div class="comp-slot-label" style="color:var(--accent)">🔵 Candidato A</div>
+          <div class="search-box" id="compSearchBoxA">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="compSearchInputA" placeholder="Buscar candidato A..." autocomplete="off" spellcheck="false"/>
+            <button class="search-clear" id="compSearchClearA">✕</button>
+          </div>
+          <div class="autocomplete-list" id="compACA" style="display:none;"></div>
+          <div class="comp-card" id="compCardA"><div class="comp-empty-card">Selecione o Candidato A</div></div>
+        </div>
+        <div class="comp-vs">VS</div>
+        <div class="comp-search-slot">
+          <div class="comp-slot-label" style="color:var(--accent-2)">🔴 Candidato B</div>
+          <div class="search-box" id="compSearchBoxB">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="compSearchInputB" placeholder="Buscar candidato B..." autocomplete="off" spellcheck="false"/>
+            <button class="search-clear" id="compSearchClearB">✕</button>
+          </div>
+          <div class="autocomplete-list" id="compACB" style="display:none;"></div>
+          <div class="comp-card" id="compCardB"><div class="comp-empty-card">Selecione o Candidato B</div></div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;margin-top:16px;justify-content:center;">
+        <div class="turno-switcher">
+          <button class="turno-btn active" id="compBtn1" onclick="switchTurnoComparar(1)">1º Turno</button>
+          <button class="turno-btn" id="compBtn2" onclick="switchTurnoComparar(2)">2º Turno</button>
+        </div>
+        <button class="filter-btn active" onclick="executarComparacao()" id="btnComparar" style="padding:10px 24px;">⚔️ Comparar</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MAIN -->
+<main><div class="container" style="padding-bottom:80px;">
+
+  <div class="empty-state" id="emptyState" style="display:none;">
+    <span class="icon">🏛️</span>
+    <h3>Selecione uma opção acima</h3>
+    <p>Use os botões no topo para escolher o modo de busca.</p>
+  </div>
+
+  <!-- ════════════════════════════════════
+       HOME DASHBOARD
+       ════════════════════════════════════ -->
+  <div id="homePanel" style="display:none;">
+    <!-- Stats gerais -->
+    <div class="home-stats-grid">
+      <div class="home-stat-card accent-blue">
+        <div class="home-stat-icon">🏛️</div>
+        <div><div class="home-stat-value" id="homeStatEstadual">—</div><div class="home-stat-label">Dep. Estaduais</div></div>
+      </div>
+      <div class="home-stat-card accent-purple">
+        <div class="home-stat-icon">🏛️</div>
+        <div><div class="home-stat-value" id="homeStatFederal">—</div><div class="home-stat-label">Dep. Federais</div></div>
+      </div>
+      <div class="home-stat-card accent-green">
+        <div class="home-stat-icon">🏙️</div>
+        <div><div class="home-stat-value" id="homeStatMunicipios">—</div><div class="home-stat-label">Municípios</div></div>
+      </div>
+      <div class="home-stat-card accent-orange">
+        <div class="home-stat-icon">🗳️</div>
+        <div><div class="home-stat-value" id="homeStatVotosEst">—</div><div class="home-stat-label">Votos Estadual (1T)</div></div>
+      </div>
+      <div class="home-stat-card accent-pink">
+        <div class="home-stat-icon">🗳️</div>
+        <div><div class="home-stat-value" id="homeStatVotosFed">—</div><div class="home-stat-label">Votos Federal (1T)</div></div>
+      </div>
+    </div>
+
+    <!-- Turno switcher da home -->
+    <div style="display:flex;justify-content:center;margin:24px 0 16px;">
+      <div class="turno-switcher">
+        <button class="turno-btn active" id="homeBtnT1" onclick="switchHomeTurno(1)">1º Turno</button>
+        <button class="turno-btn" id="homeBtnT2" onclick="switchHomeTurno(2)">2º Turno</button>
+      </div>
+    </div>
+
+    <!-- Rankings -->
+    <div class="home-rankings-grid">
+      <div class="table-card">
+        <div class="table-header">
+          <div class="table-title">🏆 Top 20 — Deputado Estadual</div>
+        </div>
+        <div class="table-scroll">
+          <table><thead><tr>
+            <th class="td-rank">#</th><th>Candidato</th><th>Partido</th>
+            <th class="sort-desc">Votos</th><th>Municípios</th><th>Dist.</th>
+          </tr></thead>
+          <tbody id="rankEstadualBody"></tbody></table>
+        </div>
+      </div>
+      <div class="table-card">
+        <div class="table-header">
+          <div class="table-title">🏆 Top 20 — Deputado Federal</div>
+        </div>
+        <div class="table-scroll">
+          <table><thead><tr>
+            <th class="td-rank">#</th><th>Candidato</th><th>Partido</th>
+            <th class="sort-desc">Votos</th><th>Municípios</th><th>Dist.</th>
+          </tr></thead>
+          <tbody id="rankFederalBody"></tbody></table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════
+       PAINEL CANDIDATO
+       ════════════════════════════════════ -->
+  <div id="candidatoPanel" style="display:none;">
+    <div class="cand-hero">
+      <div class="cand-hero-top">
+        <div class="cand-avatar-lg" id="candAvatar">🧑‍💼</div>
+        <div class="cand-info">
+          <h2 id="candNome">—</h2>
+          <p class="urna-name" id="candNomeUrna"></p>
+          <div class="cand-tags" id="candTags"></div>
+        </div>
+        <div class="turno-switcher">
+          <button class="turno-btn active" id="btn1Turno" onclick="switchTurno(1)">1º Turno</button>
+          <button class="turno-btn" id="btn2Turno" onclick="switchTurno(2)">2º Turno</button>
+        </div>
+      </div>
+      <div class="stats-row">
+        <div class="stat-card"><div class="stat-value accent" id="statVotos">—</div><div class="stat-label">Total de Votos</div></div>
+        <div class="stat-card"><div class="stat-value" id="statMunicipios">—</div><div class="stat-label">Municípios</div></div>
+        <div class="stat-card"><div class="stat-value" id="statZonas">—</div><div class="stat-label">Zonas</div></div>
+        <div class="stat-card"><div class="stat-value green" id="statSecoes">—</div><div class="stat-label">Seções</div></div>
+      </div>
+    </div>
+
+    <div class="tabs-wrapper">
+      <div class="tabs-nav">
+        <button class="tab-btn active" data-tab="municipios" onclick="switchTab('municipios')"><span class="tab-icon">🏙️</span> Municípios</button>
+        <button class="tab-btn" data-tab="zonas" onclick="switchTab('zonas')"><span class="tab-icon">🗺️</span> Zonas</button>
+        <button class="tab-btn" data-tab="secoes" onclick="switchTab('secoes')"><span class="tab-icon">🏫</span> Seções</button>
+        <button class="tab-btn" data-tab="penetracao" onclick="switchTab('penetracao')"><span class="tab-icon">🎯</span> Penetração</button>
+        <button class="tab-btn" data-tab="turnos" onclick="switchTab('turnos')" style="display:none;"><span class="tab-icon">📅</span> 1T vs 2T</button>
+      </div>
+    </div>
+    <div class="breadcrumb" id="breadcrumb"></div>
+
+    <!-- Tab Municípios -->
+    <div id="tabMunicipios">
+      <div class="table-card">
+        <div class="table-header">
+          <div class="table-title">🏙️ Votos por Município <span class="table-subtitle" id="muniCount"></span></div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <div class="table-search"><span>🔍</span><input type="text" id="muniTableFilter" placeholder="Filtrar..." oninput="filtrarTabela('muni')"></div>
+            <button class="export-btn" id="btnExportarMunicipios">⬇️ CSV</button>
+          </div>
+        </div>
+        <div class="table-scroll"><table id="muniTable"><thead><tr>
+          <th class="td-rank">#</th>
+          <th onclick="sortTable('muni','NM_MUNICIPIO')" id="th-muni-NM_MUNICIPIO">Município</th>
+          <th onclick="sortTable('muni','total_zonas')" id="th-muni-total_zonas">Zonas</th>
+          <th onclick="sortTable('muni','total_votos')" id="th-muni-total_votos" class="sort-desc">Votos</th>
+          <th>Distribuição</th>
+          <th style="width:40px;"></th>
+        </tr></thead><tbody id="muniBody"></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- Tab Zonas -->
+    <div id="tabZonas" style="display:none;">
+      <div class="table-card">
+        <div class="table-header"><div class="table-title">🗺️ Zonas Eleitorais <span class="table-subtitle" id="zonaSubtitle"></span></div></div>
+        <div class="table-scroll"><table><thead><tr>
+          <th class="td-rank">#</th>
+          <th onclick="sortTable('zona','NR_ZONA')" id="th-zona-NR_ZONA">Zona</th>
+          <th onclick="sortTable('zona','total_votos')" id="th-zona-total_votos" class="sort-desc">Votos</th>
+          <th>Distribuição</th>
+        </tr></thead><tbody id="zonaBody"></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- Tab Seções -->
+    <div id="tabSecoes" style="display:none;">
+      <div class="table-card">
+        <div class="table-header">
+          <div class="table-title">🏫 Seções de Votação <span class="table-subtitle" id="secaoSubtitle"></span></div>
+          <button class="export-btn" id="btnExportarSecoes">⬇️ Exportar CSV</button>
+        </div>
+        <div class="table-scroll"><table><thead><tr>
+          <th>Zona</th><th>Seção</th><th>Local de Votação</th><th>Endereço</th><th class="sort-desc">Votos</th>
+        </tr></thead><tbody id="secaoBody"></tbody></table></div>
+        <div class="table-footer">
+          <span class="page-info" id="secaoPageInfo"></span>
+          <div class="pagination" id="secaoPagination"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab Penetração -->
+    <div id="tabPenetracao" style="display:none;">
+      <div class="pen-grid">
+        <div class="table-card pen-stat-card"><div class="pen-icon">🏫</div><div class="pen-value" id="penSecoes">—</div><div class="pen-label">Seções com votos</div></div>
+        <div class="table-card pen-stat-card"><div class="pen-icon">📊</div><div class="pen-value" id="penMedia">—</div><div class="pen-label">Média votos/seção</div></div>
+        <div class="table-card pen-stat-card"><div class="pen-icon">🏆</div><div class="pen-value" id="penMax">—</div><div class="pen-label">Máx. votos numa seção</div></div>
+        <div class="table-card pen-stat-card"><div class="pen-icon">🌟</div><div class="pen-value" id="penMunForte" style="font-size:1rem;">—</div><div class="pen-label" id="penMunForteVotos"></div></div>
+      </div>
+      <div class="table-card" style="margin-top:20px;">
+        <div class="table-header"><div class="table-title">📊 Top 5 Municípios por Concentração</div></div>
+        <div style="padding:20px;" id="penTop5"></div>
+      </div>
+    </div>
+
+    <!-- Tab 1T vs 2T -->
+    <div id="tabTurnos" style="display:none;">
+      <div class="table-card">
+        <div class="table-header">
+          <div class="table-title">📅 Comparativo 1º vs 2º Turno <span class="table-subtitle" id="turnosCount"></span></div>
+        </div>
+        <div class="table-scroll"><table><thead><tr>
+          <th>Município</th>
+          <th style="color:var(--accent)">Votos 1T</th>
+          <th style="color:var(--accent-2)">Votos 2T</th>
+          <th>Variação</th>
+        </tr></thead><tbody id="turnosBody"></tbody></table></div>
+      </div>
+    </div>
+  </div><!-- /candidatoPanel -->
+
+  <!-- ════════════════════════════════════
+       PAINEL MUNICÍPIO
+       ════════════════════════════════════ -->
+  <div id="municipioPanel" style="display:none;">
+    <div class="cand-hero">
+      <div class="cand-hero-top">
+        <div class="cand-avatar-lg" style="background:linear-gradient(135deg,#10b981,#059669);font-size:2rem;">🏙️</div>
+        <div class="cand-info">
+          <h2 id="muniNome">—</h2>
+          <p class="urna-name" id="muniInfoText"></p>
+          <div class="cand-tags" id="muniStatsTags"></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px;align-items:flex-end;flex-shrink:0;">
+          <div class="turno-switcher">
+            <button class="turno-btn active" id="muniBtn1Turno" onclick="switchTurnoMunicipio(1)">1º Turno</button>
+            <button class="turno-btn" id="muniBtn2Turno" onclick="switchTurnoMunicipio(2)">2º Turno</button>
+          </div>
+          <div class="search-filters" style="margin:0;">
+            <button class="filter-btn active" data-cargo-muni="Deputado Estadual" onclick="setCargoMunicipio('Deputado Estadual',this)">Dep. Estadual</button>
+            <button class="filter-btn" data-cargo-muni="Deputado Federal" onclick="setCargoMunicipio('Deputado Federal',this)">Dep. Federal</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <div class="table-header">
+        <div class="table-title">🏆 Candidatos mais votados <span class="table-subtitle" id="candMuniSubtitle"></span></div>
+        <div class="table-search"><span>🔍</span><input type="text" id="candMuniFilter" placeholder="Filtrar candidato..." oninput="filtrarCandMuni()"></div>
+      </div>
+      <div class="table-scroll"><table><thead><tr>
+        <th class="td-rank">#</th><th>Candidato</th><th>Partido</th>
+        <th class="sort-desc">Votos</th><th>Distribuição</th>
+        <th style="width:110px;text-align:center;">Seções</th>
+      </tr></thead><tbody id="candMuniBody"></tbody></table></div>
+    </div>
+
+    <div id="secoesMuniPanel" style="display:none;margin-top:24px;">
+      <div class="table-card" style="border-color:var(--border-accent);">
+        <div class="table-header" style="background:rgba(59,130,246,0.05);">
+          <div class="table-title" style="color:var(--accent)">🏫 Votos por Seção <span class="table-subtitle" id="secoesMuniSubtitle"></span></div>
+          <div style="display:flex;gap:8px;margin-left:auto;">
+            <button class="export-btn" id="btnExportarSecoesMuni">⬇️ CSV</button>
+            <button class="filter-btn active" onclick="fecharSecoesMuni()" style="background:rgba(239,68,68,0.15);border-color:rgba(239,68,68,0.3);color:#f87171;">✕ Fechar</button>
+          </div>
+        </div>
+        <div class="table-scroll"><table><thead><tr>
+          <th>Zona</th><th>Seção</th><th>Local de Votação</th><th>Endereço</th><th class="sort-desc">Votos</th>
+        </tr></thead><tbody id="secoesMuniBody"></tbody></table></div>
+        <div class="table-footer">
+          <span class="page-info" id="secoesMuniPageInfo"></span>
+          <div class="pagination" id="secoesMuniPagination"></div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /municipioPanel -->
+
+  <!-- ════════════════════════════════════
+       PAINEL PARTIDO
+       ════════════════════════════════════ -->
+  <div id="partidoPanel" style="display:none;">
+    <div class="cand-hero">
+      <div class="cand-hero-top">
+        <div class="cand-avatar-lg" style="background:linear-gradient(135deg,#f59e0b,#d97706);font-size:2rem;">🎖️</div>
+        <div class="cand-info">
+          <h2 id="partidoNome">—</h2>
+          <p class="urna-name" id="partidoInfo"></p>
+        </div>
+        <div class="turno-switcher">
+          <button class="turno-btn active" id="partidoBtn1" onclick="switchTurnoPartido(1)">1º Turno</button>
+          <button class="turno-btn" id="partidoBtn2" onclick="switchTurnoPartido(2)">2º Turno</button>
+        </div>
+      </div>
+    </div>
+    <div class="table-card">
+      <div class="table-header"><div class="table-title">👥 Candidatos do Partido</div></div>
+      <div class="table-scroll"><table><thead><tr>
+        <th class="td-rank">#</th><th>Candidato</th><th>Cargo</th>
+        <th class="sort-desc">Votos</th><th>Distribuição</th>
+      </tr></thead><tbody id="partidoCandBody"></tbody></table></div>
+    </div>
+  </div><!-- /partidoPanel -->
+
+  <!-- ════════════════════════════════════
+       PAINEL COMPARAR
+       ════════════════════════════════════ -->
+  <div id="compararPanel" style="display:none;">
+    <div id="compResultado" style="display:none;">
+      <!-- Totais -->
+      <div class="comp-totais-grid">
+        <div class="table-card comp-total-card" style="border-color:var(--accent);">
+          <div style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:8px;">🔵 Candidato A — Total</div>
+          <div class="stat-value accent" id="compTotalA">—</div>
+        </div>
+        <div class="table-card comp-winner-card">
+          <div id="compWinner" style="font-size:1rem;font-weight:700;color:var(--text-primary);text-align:center;"></div>
+        </div>
+        <div class="table-card comp-total-card" style="border-color:var(--accent-2);">
+          <div style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:8px;">🔴 Candidato B — Total</div>
+          <div class="stat-value" style="color:var(--accent-2)" id="compTotalB">—</div>
+        </div>
+      </div>
+
+      <!-- Tabela comparativa -->
+      <div class="table-card" style="margin-top:20px;">
+        <div class="table-header">
+          <div class="table-title">📊 Comparativo por Município</div>
+        </div>
+        <div class="table-scroll"><table><thead><tr>
+          <th>Município</th>
+          <th style="color:var(--accent)">Votos A</th>
+          <th style="color:var(--accent-2)">Votos B</th>
+          <th>Diferença</th>
+          <th>Proporção</th>
+        </tr></thead><tbody id="compBody"></tbody></table></div>
+      </div>
+    </div>
+  </div><!-- /compararPanel -->
+
+</div></main>
+
+<script src="app.js"></script>
+</body>
+</html>
