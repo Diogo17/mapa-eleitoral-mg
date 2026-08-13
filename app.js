@@ -384,7 +384,7 @@ function setupCompararSearch() {
       atualizarCardComparar(slot, null);
     });
 
-    document.addEventListener('mousedown', e => {
+    document.addEventListener('click', e => {
       if (!e.target.closest(`#compSearchBox${slot}`) && !e.target.closest(`#compAC${slot}`))
         closeAC(`compAC${slot}`);
     });
@@ -416,7 +416,7 @@ function renderCompAC(items, slot) {
   }).join('');
 
   list.querySelectorAll('.autocomplete-item').forEach(item => {
-    item.addEventListener('mousedown', e => {
+    item.addEventListener('click', e => {
       e.preventDefault();
       const sq = parseInt(item.dataset.sq);
       const nm = item.dataset.nm;
@@ -558,7 +558,7 @@ function setupCandidatoSearch() {
     resetPanels();
   });
 
-  document.addEventListener('mousedown', e => {
+  document.addEventListener('click', e => {
     if (!e.target.closest('#searchBox') && !e.target.closest('#autocompleteList'))
       closeAC('autocompleteList');
   });
@@ -592,7 +592,7 @@ function renderCandidatoAC(items) {
   }).join('');
 
   list.querySelectorAll('.autocomplete-item').forEach(item => {
-    item.addEventListener('mousedown', e => {
+    item.addEventListener('click', e => {
       e.preventDefault();
       const sq = parseInt(item.dataset.sq);
       const nm = item.dataset.nm;
@@ -629,7 +629,7 @@ function setupMunicipioSearch() {
     resetPanels();
   });
 
-  document.addEventListener('mousedown', e => {
+  document.addEventListener('click', e => {
     if (!e.target.closest('#muniSearchBox') && !e.target.closest('#muniAutocompleteList'))
       closeAC('muniAutocompleteList');
   });
@@ -656,7 +656,7 @@ function renderMunicipioAC(items) {
   ).join('');
 
   list.querySelectorAll('.autocomplete-item').forEach(item => {
-    item.addEventListener('mousedown', e => {
+    item.addEventListener('click', e => {
       e.preventDefault();
       const nm = item.dataset.nm;
       document.getElementById('muniSearchInput').value = nm;
@@ -1226,7 +1226,7 @@ function navKeydown(e, listId) {
   let idx = [...items].findIndex(el => el.classList.contains('active'));
   if (e.key === 'ArrowDown') { e.preventDefault(); if(idx>=0)items[idx].classList.remove('active'); idx=Math.min(idx+1,items.length-1); items[idx]?.classList.add('active'); }
   else if (e.key === 'ArrowUp') { e.preventDefault(); if(idx>=0)items[idx].classList.remove('active'); idx=Math.max(idx-1,0); items[idx]?.classList.add('active'); }
-  else if (e.key === 'Enter') { e.preventDefault(); list.querySelector('.autocomplete-item.active')?.dispatchEvent(new MouseEvent('mousedown',{bubbles:true})); }
+  else if (e.key === 'Enter') { e.preventDefault(); list.querySelector('.autocomplete-item.active')?.dispatchEvent(new MouseEvent('click',{bubbles:true})); }
   else if (e.key === 'Escape') closeAC(listId);
 }
 
