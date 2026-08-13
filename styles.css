@@ -298,7 +298,9 @@ header {
   border-radius: var(--radius-lg);
   box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(59,130,246,0.1);
   z-index: 200;
-  overflow: hidden;
+  max-height: 50vh;
+  overflow-y: auto;
+  overflow-x: hidden;
   animation: dropIn 0.15s ease;
 }
 
