@@ -398,8 +398,6 @@ def abstencao(municipio: str = Query(...), turno: int = 1):
     finally:
         conn.close()
 
-    finally:
-        conn.close()
 
 
 # ─────────────────────────────────────────────
