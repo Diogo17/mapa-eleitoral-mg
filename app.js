@@ -426,7 +426,7 @@ function renderCompAC(items, slot) {
       state[`candidato${slot}`] = { sq, nm, urna: urna || nm, cargo: item.dataset.cargo, partido: item.dataset.partido };
       atualizarCardComparar(slot, state[`candidato${slot}`]);
       if (state.candidatoA && state.candidatoB) executarComparacao();
-    });
+    }));
   });
   list.style.display = 'block';
 }
@@ -600,7 +600,7 @@ function renderCandidatoAC(items) {
       document.getElementById('searchClear').style.display = 'block';
       closeAC('autocompleteList');
       selecionarCandidato(sq, nm);
-    });
+    }));
   });
   list.style.display = 'block';
 }
@@ -663,7 +663,7 @@ function renderMunicipioAC(items) {
       document.getElementById('muniSearchClear').style.display = 'block';
       closeAC('muniAutocompleteList');
       selecionarMunicipio(nm);
-    });
+    }));
   });
   list.style.display = 'block';
 }
