@@ -18,14 +18,18 @@ app = FastAPI(title="Mapa Eleitoral MG 2022", version="1.0.0")
 
 @app.on_event("startup")
 def startup_event():
-    if not os.path.exists(DB_PATH):
-        print("Banco de dados não encontrado. Iniciando download automático do Google Drive...")
+    if not os.path.exists(DB_PATH) or os.path.getsize(DB_PATH) < 1000000: # Se não existir ou for menor que 1MB (corrompido)
+        print("Banco de dados ausente ou incompleto. Iniciando download automático do Google Drive...")
         import gdown
         file_id = "1bWdMER2pcZxrm6C-XnM2GLJHbrug0J7B"
         url = f"https://drive.google.com/uc?id={file_id}"
         try:
-            gdown.download(url, DB_PATH, quiet=False)
-            print("✅ Download do banco de dados concluído com sucesso!")
+            # fuzzy=True ajuda a ignorar o aviso de "arquivo muito grande para verificação de vírus"
+            gdown.download(url, DB_PATH, quiet=False, fuzzy=True)
+            if os.path.exists(DB_PATH) and os.path.getsize(DB_PATH) > 1000000:
+                print("✅ Download do banco de dados concluído com sucesso!")
+            else:
+                print("❌ Erro: O arquivo baixado é muito pequeno ou inválido.")
         except Exception as e:
             print(f"❌ Erro ao baixar banco de dados: {e}")
 
